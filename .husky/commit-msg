@@ -1,0 +1,44 @@
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+RESET='\033[0m'
+
+echo ""
+echo "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo "${CYAN}${BOLD}  📝 Commit Convention Check                      ${RESET}"
+echo "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo ""
+
+COMMIT_MSG=$(cat "$1")
+PATTERN='^(feat|fix|style|refactor|test|chore|init|ci|cd|docs): .+$'
+
+echo "${YELLOW}${BOLD}[1/1] Checking commit message format...${RESET}"
+echo "${CYAN}──────────────────────────────────────────────────${RESET}"
+echo "  ${BOLD}Message:${RESET} $(echo "$COMMIT_MSG" | head -1)"
+echo ""
+
+if echo "$COMMIT_MSG" | head -1 | grep -qE "$PATTERN"; then
+  echo "${GREEN}${BOLD}✔ Commit message format is valid${RESET}"
+else
+  echo "${RED}${BOLD}✖ Invalid commit message format — commit aborted${RESET}"
+  echo ""
+  echo "${YELLOW}  올바른 형식:${RESET}"
+  echo "  ${BOLD}타입: 설명${RESET}"
+  echo ""
+  echo "${YELLOW}  사용 가능한 타입:${RESET}"
+  echo "  feat, fix, style, refactor, test, chore, init, ci, cd, docs"
+  echo ""
+  echo "${YELLOW}  예시:${RESET}"
+  echo "  feat: add login page"
+  echo "  fix: resolve null pointer exception"
+  echo ""
+  exit 1
+fi
+
+echo ""
+echo "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo "${GREEN}${BOLD}  ✅ Convention check passed! Committing...      ${RESET}"
+echo "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo ""
