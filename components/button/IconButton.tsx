@@ -48,7 +48,7 @@ const IconButton = ({
           className={classes}
           {...rest}
         >
-          <PlusIcon className="w-6 h-6" />
+          <PlusIcon width="24" height="24" />
         </HLButton>
       );
     case 'edit':
@@ -59,7 +59,7 @@ const IconButton = ({
           className={classes}
           {...rest}
         >
-          <EditIcon className="w-6 h-6" />
+          <EditIcon width="24" height="24" />
         </HLButton>
       );
     default:

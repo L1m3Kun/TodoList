@@ -49,7 +49,7 @@ const Button = ({
           className={classes}
           {...rest}
         >
-          <PlusIcon className="w-4 h-4" />
+          <PlusIcon width="16" height="16" />
         </HLButton>
       );
     case 'delete':
@@ -60,7 +60,7 @@ const Button = ({
           className={classes}
           {...rest}
         >
-          <XIcon className="w-4 h-4" />
+          <XIcon width="16" height="16" />
           삭제하기
         </HLButton>
       );
@@ -72,7 +72,7 @@ const Button = ({
           className={classes}
           {...rest}
         >
-          <CheckIcon className="w-4 h-4" />
+          <CheckIcon width="16" height="16" />
           수정 완료
         </HLButton>
       );
