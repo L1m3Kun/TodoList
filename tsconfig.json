@@ -24,8 +24,7 @@
       "@pages/*": ["./pages/*"],
       "@components/*": ["./components/*"],
       "@hooks/*": ["./hooks/*"],
-      "@lib/*": ["./lib/*"],
-      "@types/*": ["./types/*"]
+      "@lib/*": ["./lib/*"]
     }
   },
   "include": [
