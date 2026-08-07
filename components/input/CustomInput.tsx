@@ -8,13 +8,15 @@ import { cn } from '@/lib/utils';
 
 interface InputProps extends Omit<HLInputProps, 'value' | 'onChange'> {
   value: string;
-  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onChange: (newValue: string) => void;
   className?: string;
 }
 
 function Input({ value, onChange, className, ...rest }: InputProps) {
   const changeValue = (e: ChangeEvent<HTMLInputElement>) => {
-    onChange(e);
+    const target = e.target as HTMLInputElement;
+    const newValue = target.value;
+    onChange(newValue);
   };
   return (
     <HLInput
