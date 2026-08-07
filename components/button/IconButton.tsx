@@ -1,4 +1,3 @@
-import { ReactNode } from 'react';
 import {
   Button as HLButton,
   ButtonProps as HBButtonProps,
@@ -24,15 +23,10 @@ const iconButtonVariants = cva(
 );
 
 interface IconButtonProps
-  extends
-    Omit<HBButtonProps, 'children'>,
-    VariantProps<typeof iconButtonVariants> {
-  children?: ReactNode;
-}
+  extends HBButtonProps, VariantProps<typeof iconButtonVariants> {}
 
 const IconButton = ({
   variant,
-  children,
   className,
   disabled,
   ...rest
@@ -45,6 +39,8 @@ const IconButton = ({
         <HLButton
           type="button"
           disabled={disabled}
+          data-testid="add-icon-btn"
+          aria-label="추가하기"
           className={classes}
           {...rest}
         >
@@ -54,8 +50,10 @@ const IconButton = ({
     case 'edit':
       return (
         <HLButton
-          type="submit"
+          type="button"
           disabled={disabled}
+          data-testid="edit-icon-btn"
+          aria-label="수정하기"
           className={classes}
           {...rest}
         >
@@ -63,16 +61,7 @@ const IconButton = ({
         </HLButton>
       );
     default:
-      return (
-        <HLButton
-          type="button"
-          disabled={disabled}
-          className={classes}
-          {...rest}
-        >
-          {children}
-        </HLButton>
-      );
+      throw new Error('IconButton Variant Error: select IconButton Variant.');
   }
 };
 

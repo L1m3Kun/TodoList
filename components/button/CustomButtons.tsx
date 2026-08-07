@@ -1,4 +1,3 @@
-import { ReactNode } from 'react';
 import {
   Button as HLButton,
   ButtonProps as HBButtonProps,
@@ -27,17 +26,9 @@ const buttonVariants = cva(
 );
 
 interface ButtonProps
-  extends Omit<HBButtonProps, 'children'>, VariantProps<typeof buttonVariants> {
-  children?: ReactNode;
-}
+  extends HBButtonProps, VariantProps<typeof buttonVariants> {}
 
-const Button = ({
-  variant,
-  children,
-  className,
-  disabled,
-  ...rest
-}: ButtonProps) => {
+const Button = ({ variant, className, disabled, ...rest }: ButtonProps) => {
   const classes = cn(buttonVariants({ variant }), className);
 
   switch (variant) {
@@ -47,6 +38,8 @@ const Button = ({
           type="button"
           disabled={disabled}
           className={classes}
+          data-testid="add-btn"
+          aria-label="추가하기"
           {...rest}
         >
           <PlusIcon width="16" height="16" />
@@ -67,7 +60,7 @@ const Button = ({
     case 'edit':
       return (
         <HLButton
-          type="submit"
+          type="button"
           disabled={disabled}
           className={classes}
           {...rest}
@@ -77,16 +70,7 @@ const Button = ({
         </HLButton>
       );
     default:
-      return (
-        <HLButton
-          type="button"
-          disabled={disabled}
-          className={classes}
-          {...rest}
-        >
-          {children}
-        </HLButton>
-      );
+      throw new Error('Button Variant Error: select Button Variant.');
   }
 };
 
