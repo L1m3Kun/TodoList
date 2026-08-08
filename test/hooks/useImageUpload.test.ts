@@ -13,6 +13,7 @@
 // 따라서 이 훅 레벨 테스트는 jsdom 환경을 유지하는 것이 `renderHook` 요구사항과 상충하지 않는다.
 import { act, renderHook } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
+import { StrictMode } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { useImageUpload } from '@hooks/useImageUpload';
@@ -173,6 +174,25 @@ describe('useImageUpload', () => {
       await firstPromise;
     });
 
+    expect(result.current.isUploading).toBe(false);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('StrictMode(mount→unmount→remount)에서도 url을 반환하고 isUploading이 true→false로 전이한다 (회귀 — isMountedRef 영구 false 고착 버그)', async () => {
+    const { result } = renderHook(() => useImageUpload(), { wrapper: StrictMode });
+    let uploadPromise!: Promise<string | null>;
+
+    act(() => {
+      uploadPromise = result.current.upload(createImageFile(1024));
+    });
+    expect(result.current.isUploading).toBe(true);
+
+    let url: string | null = null;
+    await act(async () => {
+      url = await uploadPromise;
+    });
+
+    expect(url).toBe(mockUploadImageResult.url);
     expect(result.current.isUploading).toBe(false);
     expect(result.current.error).toBeNull();
   });

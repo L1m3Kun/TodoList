@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { StrictMode } from 'react';
+import { afterEach, describe, expect, it } from 'vitest';
 import { useTodoList } from '@/hooks/useTodoList';
 import { HttpError } from '@/lib/api/errors';
 import {
@@ -193,39 +194,6 @@ describe('useTodoList', () => {
     await waitFor(() => expect(list.count()).toBe(2));
   });
 
-  it('언마운트 후 늦게 도착하는 초기 로드 응답은 상태를 갱신하지 않는다 (stale/unmount 가드, M-4b)', async () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    let markHandlerReached!: () => void;
-    const handlerReached = new Promise<void>((resolve) => {
-      markHandlerReached = resolve;
-    });
-    let resolveList!: (items: TodoSummaryDto[]) => void;
-    const listResponse = new Promise<TodoSummaryDto[]>((resolve) => {
-      resolveList = resolve;
-    });
-    server.use(
-      http.get(`${TEST_API_BASE_URL}/items`, async () => {
-        markHandlerReached();
-        return HttpResponse.json(await listResponse);
-      }),
-    );
-
-    const { unmount } = renderHook(() => useTodoList());
-    // 요청이 실제로 핸들러에 도달한(=in-flight) 뒤에 언마운트해야 이 테스트가 의미가 있다.
-    await handlerReached;
-    unmount();
-
-    await act(async () => {
-      resolveList([mockTodoSummary]);
-      await Promise.resolve();
-    });
-
-    // React가 "언마운트된 컴포넌트에 대한 상태 업데이트" 경고를 내지 않아야
-    // isMountedRef/isStale 가드가 실제로 setState를 막았다고 볼 수 있다.
-    expect(errorSpy).not.toHaveBeenCalled();
-    errorSpy.mockRestore();
-  });
-
   it('id 대신 page가 즉시 바뀌면 이전 요청의 응답이 늦게 도착해도 최신 목록을 덮어쓰지 않는다 (stale 가드, M-4b)', async () => {
     server.use(
       http.get(`${TEST_API_BASE_URL}/items`, async ({ request }) => {
@@ -254,5 +222,29 @@ describe('useTodoList', () => {
     // 지연됐던 page=1 응답이 뒤늦게 도착해도 최신(page=2) 상태를 덮어쓰지 않는다
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(result.current.items).toEqual([{ ...mockTodoSummary, id: 99, name: 'page2' }]);
+  });
+
+  it('StrictMode(mount→unmount→remount)에서도 createTodo가 성공 결과를 반환한다 (회귀 — isMountedRef 영구 false 고착 버그)', async () => {
+    const createdDetail = { ...mockTodoDetail, id: 2, name: 'New todo' };
+    const createdSummary = { id: 2, name: 'New todo', isCompleted: false };
+    let listCallCount = 0;
+    server.use(
+      http.post(`${TEST_API_BASE_URL}/items`, () => HttpResponse.json(createdDetail)),
+      http.get(`${TEST_API_BASE_URL}/items`, () => {
+        listCallCount += 1;
+        return HttpResponse.json(listCallCount === 1 ? [mockTodoSummary] : [mockTodoSummary, createdSummary]);
+      }),
+    );
+
+    const { result } = renderHook(() => useTodoList(), { wrapper: StrictMode });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let created: TodoSummaryDto | null = null;
+    await act(async () => {
+      created = await result.current.createTodo({ name: 'New todo' });
+    });
+
+    expect(created).toEqual(createdSummary);
+    expect(result.current.error).toBeNull();
   });
 });

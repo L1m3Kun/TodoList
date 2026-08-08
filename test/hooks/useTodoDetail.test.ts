@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { StrictMode } from 'react';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { useTodoDetail } from '@hooks/useTodoDetail';
 import { HttpError } from '@lib/api';
@@ -190,34 +191,31 @@ describe('useTodoDetail', () => {
     expect(result.current.detail).toEqual(otherDetail);
   });
 
-  it('언마운트 후 늦게 도착하는 응답은 상태를 갱신하지 않는다 (stale/unmount 가드, M-4b)', async () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    let markHandlerReached!: () => void;
-    const handlerReached = new Promise<void>((resolve) => {
-      markHandlerReached = resolve;
-    });
-    let resolveDetail!: (detail: TodoDetailDto) => void;
-    const detailResponse = new Promise<TodoDetailDto>((resolve) => {
-      resolveDetail = resolve;
-    });
+  it('StrictMode(mount→unmount→remount)에서도 update() 성공 시 결과를 반환하고 detail이 갱신된다 (회귀 — isMountedRef 영구 false 고착 버그)', async () => {
+    const updatedDetail = {
+      ...mockTodoDetail,
+      name: 'Updated name',
+      isCompleted: true,
+    };
     server.use(
-      http.get(`${TEST_API_BASE_URL}/items/:itemId`, async () => {
-        markHandlerReached();
-        return HttpResponse.json(await detailResponse);
-      })
+      http.patch(`${TEST_API_BASE_URL}/items/:itemId`, () =>
+        HttpResponse.json(updatedDetail)
+      )
     );
 
-    const { unmount } = renderHook(() => useTodoDetail(mockTodoDetail.id));
-    // 요청이 실제로 핸들러에 도달한(=in-flight) 뒤에 언마운트해야 이 테스트가 의미가 있다.
-    await handlerReached;
-    unmount();
+    const { result } = renderHook(() => useTodoDetail(mockTodoDetail.id), {
+      wrapper: StrictMode,
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.detail).toEqual(mockTodoDetail);
 
+    let updated: TodoDetailDto | null = null;
     await act(async () => {
-      resolveDetail(mockTodoDetail);
-      await Promise.resolve();
+      updated = await result.current.update({ name: 'Updated name', isCompleted: true });
     });
 
-    expect(errorSpy).not.toHaveBeenCalled();
-    errorSpy.mockRestore();
+    expect(updated).toEqual(updatedDetail);
+    expect(result.current.detail).toEqual(updatedDetail);
+    expect(result.current.error).toBeNull();
   });
 });

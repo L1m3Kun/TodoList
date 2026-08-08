@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createTodo as createTodoRequest, deleteTodo as deleteTodoRequest, getTodos } from '@/lib/api/todoApi';
 import { ApiError, NetworkError } from '@/lib/api/errors';
 import type { CreateTodoInput, TodoSummaryDto } from '@/types/todo.dto';
@@ -17,6 +17,12 @@ import type { CreateTodoInput, TodoSummaryDto } from '@/types/todo.dto';
  * `refetch()`로 서버를 다시 조회해 재동기화한다(M-2) — 목록 effect의 in-flight 요청과
  * 뮤테이션이 경쟁하면 로컬 반영은 뒤늦게 도착한 목록 응답에 덮어써질 수 있기 때문이다.
  * 서버가 정본이라는 원칙은 `useTodoDetail.update`가 이미 채택한 것과 일관된다.
+ *
+ * `createTodo`/`deleteTodo`는 언마운트 여부를 검사하지 않는다 — React 18부터 언마운트된
+ * 컴포넌트에 대한 setState는 경고 없는 무해한 no-op이라 마운트 추적 ref가 방지할 문제가
+ * 없다(오히려 StrictMode의 mount→unmount→remount 시퀀스에서 cleanup만 있고 remount 시
+ * 되돌리는 로직이 없는 ref는 "영구히 false"로 고착되어 뮤테이션이 항상 실패한 것처럼
+ * 보고하는 실버그를 만들었다 — 이 주석을 남긴 이유).
  */
 
 export interface UseTodoListParams {
@@ -57,15 +63,6 @@ export function useTodoList(params?: UseTodoListParams): UseTodoListResult {
     error: null,
   });
   const [refetchToken, setRefetchToken] = useState(0);
-  // 인터랙션 함수(createTodo/deleteTodo)는 effect가 아니라서 자체 cleanup이 없다.
-  // 언마운트 후 도착하는 응답이 setState하지 않도록 이 ref로 마운트 여부를 추적한다.
-  const isMountedRef = useRef(true);
-
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
 
   useEffect(() => {
     // effect가 재실행될 때(마운트 해제 포함)마다 cleanup에서 isStale을 세워
@@ -99,15 +96,12 @@ export function useTodoList(params?: UseTodoListParams): UseTodoListResult {
     async (input: CreateTodoInput): Promise<TodoSummaryDto | null> => {
       try {
         const created = await createTodoRequest(input);
-        if (!isMountedRef.current) return null;
         setState((curr) => ({ ...curr, error: null }));
         refetch();
         return toSummary(created);
       } catch (caught) {
         const apiError = toApiError(caught);
-        if (isMountedRef.current) {
-          setState((curr) => ({ ...curr, error: apiError }));
-        }
+        setState((curr) => ({ ...curr, error: apiError }));
         return null;
       }
     },
@@ -118,15 +112,12 @@ export function useTodoList(params?: UseTodoListParams): UseTodoListResult {
     async (id: number): Promise<boolean> => {
       try {
         await deleteTodoRequest(id);
-        if (!isMountedRef.current) return false;
         setState((curr) => ({ ...curr, error: null }));
         refetch();
         return true;
       } catch (caught) {
         const apiError = toApiError(caught);
-        if (isMountedRef.current) {
-          setState((curr) => ({ ...curr, error: apiError }));
-        }
+        setState((curr) => ({ ...curr, error: apiError }));
         return false;
       }
     },
