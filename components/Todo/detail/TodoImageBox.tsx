@@ -11,9 +11,15 @@ interface TodoImageBoxProps {
   imageUrl?: string;
   onSelectImage?: (file: File) => void;
   className?: string;
+  isUploading?: boolean;
 }
 
-function TodoImageBox({ imageUrl, onSelectImage, className }: TodoImageBoxProps) {
+function TodoImageBox({
+  imageUrl,
+  onSelectImage,
+  className,
+  isUploading,
+}: TodoImageBoxProps) {
   const fileInputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -34,6 +40,7 @@ function TodoImageBox({ imageUrl, onSelectImage, className }: TodoImageBoxProps)
 
   return (
     <div
+      aria-busy={isUploading || undefined}
       className={cn(
         'relative overflow-hidden rounded-3xl w-full aspect-[10/9] tablet:aspect-[11/5] lg:aspect-[6/5]',
         imageUrl
@@ -67,11 +74,28 @@ function TodoImageBox({ imageUrl, onSelectImage, className }: TodoImageBoxProps)
         onChange={handleFileInputChange}
       />
 
+      {isUploading ? (
+        <div
+          role="status"
+          className="absolute inset-0 flex items-center justify-center rounded-3xl bg-slate-900/50 text-sm font-medium text-white"
+        >
+          업로드 중
+        </div>
+      ) : null}
+
       <div className="absolute z-10 bottom-4 right-4">
         {imageUrl ? (
-          <IconButton variant="edit" onClick={handleTriggerFilePicker} />
+          <IconButton
+            variant="edit"
+            onClick={handleTriggerFilePicker}
+            disabled={isUploading}
+          />
         ) : (
-          <IconButton variant="add" onClick={handleTriggerFilePicker} />
+          <IconButton
+            variant="add"
+            onClick={handleTriggerFilePicker}
+            disabled={isUploading}
+          />
         )}
       </div>
     </div>

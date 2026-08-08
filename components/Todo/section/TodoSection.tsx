@@ -10,15 +10,22 @@ import { Todo } from '@/types';
 import { TodoList } from '../TodoList';
 import { TodoEmpty } from '@/components/empty';
 import { DoneEmpty } from '@/components/empty';
+import { TodoListSkeleton } from './TodoListSkeleton';
 
 interface TodoSectionProps {
   variant: 'todo' | 'done';
   children?: ReactNode;
   todos: Todo[];
   onToggle?: (todo: Todo) => void;
+  isLoading?: boolean;
 }
 
-function TodoSection({ variant, todos, onToggle }: TodoSectionProps) {
+function TodoSection({
+  variant,
+  todos,
+  onToggle,
+  isLoading = false,
+}: TodoSectionProps) {
   const badgeImageUrl = () => {
     if (variant === 'todo') {
       return TodoBadge;
@@ -28,7 +35,9 @@ function TodoSection({ variant, todos, onToggle }: TodoSectionProps) {
 
   let body = <TodoList todos={todos} onToggle={onToggle} />;
 
-  if (todos.length === 0) {
+  if (isLoading) {
+    body = <TodoListSkeleton />;
+  } else if (todos.length === 0) {
     if (variant === 'todo') {
       body = <TodoEmpty />;
     } else {
@@ -45,7 +54,12 @@ function TodoSection({ variant, todos, onToggle }: TodoSectionProps) {
           height={36}
         />
       </div>
-      <div className="flex items-center justify-center w-full">{body}</div>
+      <div
+        className="flex items-center justify-center w-full"
+        aria-busy={isLoading}
+      >
+        {body}
+      </div>
     </div>
   );
 }
