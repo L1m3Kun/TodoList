@@ -28,7 +28,11 @@ export const todoDetailSchema = z.object({
   name: z.string(),
   memo: z.string().nullable(),
   imageUrl: z.string().nullable(),
-  isCompleted: z.boolean(),
+  // api-spec.json의 Item.required에 isCompleted가 없다(default:false로 선언됨).
+  // POST /items 생성 응답이 이를 생략해도 파싱이 실패하지 않도록 관대화한다(M-7).
+  // z.infer 출력 타입은 .default()가 있어도 boolean(옵셔널 아님)으로 유지되므로
+  // 아래 AssertEqual도 그대로 통과한다.
+  isCompleted: z.boolean().default(false),
 });
 
 export const todoSummaryListSchema = z.array(todoSummarySchema);

@@ -119,6 +119,9 @@ describe('request() — HttpError (D-53 실측 에러 바디 형태)', () => {
     expect(httpError.serverMessage).toBe(rawPrismaMessage);
     expect(httpError.message).not.toBe(rawPrismaMessage);
     expect(httpError.message.toLowerCase()).not.toContain('prisma');
+    // M-1 회귀 — 언어 기본 직렬화(JSON.stringify)로도 원시 Prisma 스택이 새지 않는다
+    expect(JSON.stringify(httpError)).not.toContain('prisma');
+    expect(JSON.stringify(httpError).toLowerCase()).not.toContain('record to delete');
   });
 });
 

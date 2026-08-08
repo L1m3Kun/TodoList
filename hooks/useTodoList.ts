@@ -10,6 +10,13 @@ import type { CreateTodoInput, TodoSummaryDto } from '@/types/todo.dto';
  * effect 의존성은 `params` 객체가 아니라 `page`/`pageSize` primitive로 좁혔다. 호출부가
  * 매 렌더 인라인 객체(`{ page: 1 }`)를 넘겨도 값 자체가 바뀌지 않으면 재요청하지 않는다
  * (객체 identity를 deps에 넣으면 렌더마다 재요청이 나가는 함정을 피한다).
+ *
+ * `createTodo`/`deleteTodo`는 throw하지 않는다(D-61 — `useTodoDetail`·`useImageUpload`와
+ * 동일 계약: 에러는 `error` state로, 성공 여부는 반환값으로 알린다). 실패 시 `null`을
+ * 반환하고 `error`를 채운다. 성공 후에는 로컬 배열을 직접 append/filter하지 않고
+ * `refetch()`로 서버를 다시 조회해 재동기화한다(M-2) — 목록 effect의 in-flight 요청과
+ * 뮤테이션이 경쟁하면 로컬 반영은 뒤늦게 도착한 목록 응답에 덮어써질 수 있기 때문이다.
+ * 서버가 정본이라는 원칙은 `useTodoDetail.update`가 이미 채택한 것과 일관된다.
  */
 
 export interface UseTodoListParams {
@@ -25,8 +32,8 @@ interface UseTodoListState {
 
 export interface UseTodoListResult extends UseTodoListState {
   refetch: () => void;
-  createTodo: (input: CreateTodoInput) => Promise<void>;
-  deleteTodo: (id: number) => Promise<void>;
+  createTodo: (input: CreateTodoInput) => Promise<TodoSummaryDto | null>;
+  deleteTodo: (id: number) => Promise<boolean>;
 }
 
 /**
@@ -88,37 +95,43 @@ export function useTodoList(params?: UseTodoListParams): UseTodoListResult {
     setRefetchToken((token) => token + 1);
   }, []);
 
-  const createTodo = useCallback(async (input: CreateTodoInput) => {
-    try {
-      const created = await createTodoRequest(input);
-      if (!isMountedRef.current) return;
-      setState((curr) => ({ ...curr, items: [...curr.items, toSummary(created)], error: null }));
-    } catch (caught) {
-      const apiError = toApiError(caught);
-      if (isMountedRef.current) {
-        setState((curr) => ({ ...curr, error: apiError }));
+  const createTodo = useCallback(
+    async (input: CreateTodoInput): Promise<TodoSummaryDto | null> => {
+      try {
+        const created = await createTodoRequest(input);
+        if (!isMountedRef.current) return null;
+        setState((curr) => ({ ...curr, error: null }));
+        refetch();
+        return toSummary(created);
+      } catch (caught) {
+        const apiError = toApiError(caught);
+        if (isMountedRef.current) {
+          setState((curr) => ({ ...curr, error: apiError }));
+        }
+        return null;
       }
-      throw apiError;
-    }
-  }, []);
+    },
+    [refetch]
+  );
 
-  const deleteTodo = useCallback(async (id: number) => {
-    try {
-      await deleteTodoRequest(id);
-      if (!isMountedRef.current) return;
-      setState((curr) => ({
-        ...curr,
-        items: curr.items.filter((item) => item.id !== id),
-        error: null,
-      }));
-    } catch (caught) {
-      const apiError = toApiError(caught);
-      if (isMountedRef.current) {
-        setState((curr) => ({ ...curr, error: apiError }));
+  const deleteTodo = useCallback(
+    async (id: number): Promise<boolean> => {
+      try {
+        await deleteTodoRequest(id);
+        if (!isMountedRef.current) return false;
+        setState((curr) => ({ ...curr, error: null }));
+        refetch();
+        return true;
+      } catch (caught) {
+        const apiError = toApiError(caught);
+        if (isMountedRef.current) {
+          setState((curr) => ({ ...curr, error: apiError }));
+        }
+        return false;
       }
-      throw apiError;
-    }
-  }, []);
+    },
+    [refetch]
+  );
 
   return { ...state, refetch, createTodo, deleteTodo };
 }

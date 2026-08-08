@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { createTodo, deleteTodo, updateTodo } from '@/lib/api/todoApi';
+import { ValidationError } from '@/lib/api/errors';
 import { TEST_API_BASE_URL, mockDeleteResult, mockTodoDetail } from '@/test/mocks/handlers';
 import { server } from '@/test/mocks/server';
 
@@ -22,6 +23,24 @@ describe('createTodo', () => {
     await createTodo({ name: 'New todo' });
 
     expect(sentBody).toEqual({ name: 'New todo' });
+  });
+
+  it('name이 빈 문자열이면 ValidationError를 던지고 네트워크 요청을 보내지 않는다 (H-3 회귀)', async () => {
+    let callCount = 0;
+    server.use(
+      http.post(`${TEST_API_BASE_URL}/items`, () => {
+        callCount += 1;
+        return HttpResponse.json(mockTodoDetail);
+      }),
+    );
+
+    const error = await createTodo({ name: '' }).catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(ValidationError);
+    expect((error as ValidationError).message).toBe('입력값이 올바르지 않습니다.');
+    // 원인 불명 실패(H-3)가 아니라 요청 검증 실패임을 문구로 구분할 수 있어야 한다
+    expect((error as ValidationError).message).not.toBe('서버 응답이 예상한 형식과 다릅니다.');
+    expect(callCount).toBe(0);
   });
 });
 

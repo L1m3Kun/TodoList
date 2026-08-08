@@ -37,7 +37,9 @@ const JSON_HEADERS = { 'Content-Type': 'application/json' } as const;
  */
 function parseOrThrow<T>(schema: ZodType<T>, input: unknown): T {
   const result = schema.safeParse(input);
-  if (!result.success) throw new ValidationError(result.error);
+  if (!result.success) {
+    throw new ValidationError(result.error, '입력값이 올바르지 않습니다.');
+  }
   return result.data;
 }
 
@@ -103,11 +105,18 @@ export async function deleteTodo(id: number): Promise<DeleteResult> {
 /**
  * POST /images/upload — 네트워크 호출 전 `validateImageFile`(5MB·MIME 가드)을 반드시 거친다
  * (SERVICE.md 함정 5: 서버 5MB 상한을 클라이언트가 먼저 막지 않으면 원인 불명 실패로 보인다).
- * FormData 필드명은 반드시 `'image'`. `headers`는 넘기지 않는다 — FormData의 자동
- * boundary 생성을 유지하기 위해 Content-Type을 수동 설정하지 않는다.
+ * `validateImageFile`은 plain `Error`를 던지는데(순환 의존 회피, ST-2 계약), 이 함수가
+ * 그대로 전파하면 "API 함수는 3종 외 예외를 던지지 않는다"는 표준을 깬다(H-1) — 여기서
+ * `ValidationError`로 정규화한다. FormData 필드명은 반드시 `'image'`. `headers`는
+ * 넘기지 않는다 — FormData의 자동 boundary 생성을 유지하기 위해 Content-Type을
+ * 수동 설정하지 않는다.
  */
 export async function uploadImage(file: File): Promise<UploadImageResult> {
-  validateImageFile(file);
+  try {
+    validateImageFile(file);
+  } catch (cause) {
+    throw new ValidationError(cause, '이미지 파일이 올바르지 않습니다.');
+  }
   const formData = new FormData();
   formData.append('image', file);
   return request(

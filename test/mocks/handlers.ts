@@ -1,4 +1,10 @@
 import { http, HttpResponse } from 'msw';
+import type {
+  TodoSummaryDto,
+  TodoDetailDto,
+  DeleteResult,
+  UploadImageResult,
+} from '@/types/todo.dto';
 
 /**
  * 테스트 전용 API base URL. vitest.config.mts의
@@ -8,33 +14,18 @@ import { http, HttpResponse } from 'msw';
 export const TEST_API_BASE_URL = 'http://example.com/api/test-tenant';
 
 /**
- * 목록 응답 형태 (api-spec.json FindAll) — memo/imageUrl 없음(함정 1).
- * lib/api/todoApi.ts(ST-4)가 아직 없으므로 도메인 타입을 import하지 않고
- * 스펙 필드를 직접 리터럴로 정의한다(ST-0은 ST-1보다 먼저 실행됨).
+ * 목(mock) 데이터에 도메인 DTO 타입을 직접 붙인다(M-6). ST-0 시점엔 로컬 인터페이스로
+ * 시작했으나(순환 의존 우려, 지금은 해소됨), 그 상태에서는 목이 계약과 어긋나도
+ * `tsc`가 잡지 못했다 — 실제로 DTO 리네임 때 이 파일만 조용히 비껴간 사례가 있었다(D-64).
+ * 도메인 타입을 직접 쓰면 목이 이탈하는 순간 컴파일 에러가 난다.
  */
-export interface MockTodoSummary {
-  id: number;
-  name: string;
-  isCompleted: boolean;
-}
-
-/** 상세 응답 형태 (api-spec.json Item / FindOne / Update) */
-export interface MockTodoDetail {
-  id: number;
-  tenantId: string;
-  name: string;
-  memo: string | null;
-  imageUrl: string | null;
-  isCompleted: boolean;
-}
-
-export const mockTodoSummary: MockTodoSummary = {
+export const mockTodoSummary: TodoSummaryDto = {
   id: 1,
   name: 'Mock todo',
   isCompleted: false,
 };
 
-export const mockTodoDetail: MockTodoDetail = {
+export const mockTodoDetail: TodoDetailDto = {
   id: 1,
   tenantId: 'test-tenant',
   name: 'Mock todo',
@@ -43,9 +34,11 @@ export const mockTodoDetail: MockTodoDetail = {
   isCompleted: false,
 };
 
-export const mockDeleteResult = { message: 'Item deleted successfully' };
+export const mockDeleteResult: DeleteResult = { message: 'Item deleted successfully' };
 
-export const mockUploadImageResult = { url: `${TEST_API_BASE_URL}/mock-image.png` };
+export const mockUploadImageResult: UploadImageResult = {
+  url: `${TEST_API_BASE_URL}/mock-image.png`,
+};
 
 /**
  * 실측된(D-53, 오케스트레이터 실측) 서버 에러 바디 형태.

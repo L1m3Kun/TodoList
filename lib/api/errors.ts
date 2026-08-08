@@ -1,4 +1,4 @@
-import type { ZodError } from 'zod';
+import { ZodError } from 'zod';
 
 /** ApiError 3종을 구분하는 태그. */
 export type ApiErrorKind = 'network' | 'http' | 'validation';
@@ -51,16 +51,46 @@ export class HttpError extends ApiError {
     this.serverMessage = serverMessage;
     this.details = details;
   }
+
+  /**
+   * `JSON.stringify`·`{...error}` 같은 언어 기본 직렬화가 own enumerable 프로퍼티를
+   * 전부 뱉으면 `serverMessage`(원시 Prisma 스택 등, D-53)가 그대로 샌다(M-1).
+   * 화이트리스트로 안전한 필드만 노출한다.
+   */
+  toJSON(): { kind: ApiErrorKind; status: number; message: string } {
+    return { kind: this.kind, status: this.status, message: this.message };
+  }
 }
 
 /**
- * 성공(2xx) 응답이 zod 계약과 어긋날 때. 서버가 계약과 다른 필드를 반환하거나,
- * 업로드 전 클라이언트 가드 등 다른 런타임 검증이 실패했을 때도 사용한다.
+ * 요청 바디 검증 실패, 응답이 zod 계약과 어긋날 때, 또는 업로드 전 클라이언트 가드
+ * (`validateImageFile` 등)처럼 다른 런타임 검증이 실패했을 때 사용하는 공용 클래스다.
+ * `cause`로 `ZodError`뿐 아니라 plain `Error`도 받아들인다 — 두 경우 모두 이 한 클래스로
+ * 정규화해야 "API 함수는 NetworkError|HttpError|ValidationError 3종 외 예외를 던지지
+ * 않는다"는 표준(H-1)을 지킬 수 있다.
+ *
+ * `message`는 실패 맥락에 따라 호출부가 넘긴다(요청 검증 vs 응답 파싱 vs 클라이언트 가드,
+ * H-3 — 문구가 다르면 사용자가 원인을 구분할 수 있다). 기본값은 응답 파싱 실패용 문구다.
+ * `cause`가 `ZodError`면 필드별 상세를 `details`로 추출해 `HttpError.details`와
+ * 같은 용도로 쓸 수 있게 한다.
  */
 export class ValidationError extends ApiError {
-  constructor(cause: ZodError) {
-    super('validation', '서버 응답이 예상한 형식과 다릅니다.', { cause });
+  readonly details?: Record<string, ApiErrorDetail>;
+
+  constructor(cause: unknown, message = '서버 응답이 예상한 형식과 다릅니다.') {
+    super('validation', message, { cause });
+    this.details = cause instanceof ZodError ? extractZodDetails(cause) : undefined;
   }
+}
+
+/** ZodError.issues를 HttpError.details와 동일한 형태({message, value?})로 변환한다. */
+function extractZodDetails(error: ZodError): Record<string, ApiErrorDetail> {
+  const details: Record<string, ApiErrorDetail> = {};
+  for (const issue of error.issues) {
+    const key = issue.path.length > 0 ? issue.path.join('.') : '(root)';
+    details[key] = { message: issue.message };
+  }
+  return details;
 }
 
 /**

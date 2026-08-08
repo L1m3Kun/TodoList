@@ -14,6 +14,9 @@ import type { DeleteResult, TodoDetailDto, UpdateTodoInput } from '@/types/todo.
  * `update()`는 optimistic하지 않다 — 로컬 상태를 먼저 바꾸지 않고, 성공 응답(서버가 정본)을
  * 그대로 받아 로컬 상태를 교체한다. id는 호출부가 이미 `parseTodoId`(lib/utils/parseTodoId.ts)를
  * 거친 number여야 한다(ST-4 계약과 동일한 전제).
+ *
+ * `update`/`remove`는 throw하지 않는다(D-61 — `useTodoList`·`useImageUpload`와 동일 계약:
+ * 에러는 `error` state로, 성공 여부는 반환값으로 알린다). 실패 시 `null`을 반환한다.
  */
 
 interface UseTodoDetailState {
@@ -23,8 +26,8 @@ interface UseTodoDetailState {
 }
 
 export interface UseTodoDetailResult extends UseTodoDetailState {
-  update: (patch: UpdateTodoInput) => Promise<void>;
-  remove: () => Promise<DeleteResult>;
+  update: (patch: UpdateTodoInput) => Promise<TodoDetailDto | null>;
+  remove: () => Promise<DeleteResult | null>;
 }
 
 /** getApiBaseUrl()의 배포 설정 오류(plain Error)까지 포함해 항상 ApiError로 정규화한다. */
@@ -72,23 +75,24 @@ export function useTodoDetail(id: number): UseTodoDetailResult {
   }, [id]);
 
   const update = useCallback(
-    async (patch: UpdateTodoInput) => {
+    async (patch: UpdateTodoInput): Promise<TodoDetailDto | null> => {
       try {
         const updated = await updateTodoRequest(id, patch);
-        if (!isMountedRef.current) return;
+        if (!isMountedRef.current) return null;
         setState((curr) => ({ ...curr, detail: updated, error: null }));
+        return updated;
       } catch (caught) {
         const apiError = toApiError(caught);
         if (isMountedRef.current) {
           setState((curr) => ({ ...curr, error: apiError }));
         }
-        throw apiError;
+        return null;
       }
     },
     [id]
   );
 
-  const remove = useCallback(async () => {
+  const remove = useCallback(async (): Promise<DeleteResult | null> => {
     try {
       const result = await deleteTodoRequest(id);
       if (isMountedRef.current) {
@@ -100,7 +104,7 @@ export function useTodoDetail(id: number): UseTodoDetailResult {
       if (isMountedRef.current) {
         setState((curr) => ({ ...curr, error: apiError }));
       }
-      throw apiError;
+      return null;
     }
   }, [id]);
 
