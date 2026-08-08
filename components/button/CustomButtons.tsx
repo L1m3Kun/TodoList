@@ -10,7 +10,7 @@ import CheckIcon from '@assets/icon/check/check.svg';
 import { cn } from '@lib/utils';
 
 const buttonVariants = cva(
-  'flex items-center justify-center gap-[4px] w-[164.35px] h-[52px] rounded-[24px] border-slate-900 border-2  font-bold font-nanumSquare text-lg shadow-[3.65px_4px_#17233A] cursor-pointer',
+  'flex items-center justify-center gap-[4px] w-[164.35px] h-[52px] rounded-[24px] border-slate-900 border-2  font-bold font-nanumSquare text-lg shadow-[3.65px_4px_#17233A] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none',
   {
     variants: {
       variant: {

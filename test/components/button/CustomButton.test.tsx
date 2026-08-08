@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
@@ -76,5 +77,23 @@ describe('Button', () => {
     render(<Button variant="edit" onClick={handleClick} />);
     fireEvent.click(screen.getByRole('button', { name: '수정 완료' }));
     expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  // 회귀 (ST-3): cva base에 disabled 시각 상태가 추가되기 전에는 disabled=true여도
+  // opacity/cursor 변화가 없어 pending 상태가 화면에 드러나지 않았다. S-10에 따라
+  // StrictMode wrapper로 렌더한다.
+  it('disabled를 전달하면 실제로 비활성화되고, 클릭해도 onClick 핸들러가 호출되지 않는다.', () => {
+    const handleClick = vi.fn();
+    render(<Button variant="edit" disabled onClick={handleClick} />, {
+      wrapper: StrictMode,
+    });
+
+    const button = screen.getByRole('button', { name: '수정 완료' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveClass('disabled:cursor-not-allowed');
+    expect(button).toHaveClass('disabled:opacity-50');
+
+    fireEvent.click(button);
+    expect(handleClick).not.toHaveBeenCalled();
   });
 });
