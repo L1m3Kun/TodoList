@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { createTodo as createTodoRequest, deleteTodo as deleteTodoRequest, getTodos } from '@/lib/api/todoApi';
+import {
+  createTodo as createTodoRequest,
+  deleteTodo as deleteTodoRequest,
+  getTodos,
+  updateTodo as updateTodoRequest,
+} from '@/lib/api/todoApi';
 import { ApiError, NetworkError } from '@/lib/api/errors';
 import type { CreateTodoInput, TodoSummaryDto } from '@/types/todo.dto';
 
@@ -40,6 +45,7 @@ export interface UseTodoListResult extends UseTodoListState {
   refetch: () => void;
   createTodo: (input: CreateTodoInput) => Promise<TodoSummaryDto | null>;
   deleteTodo: (id: number) => Promise<boolean>;
+  toggleTodo: (id: number, isCompleted: boolean) => Promise<boolean>;
 }
 
 /**
@@ -124,5 +130,30 @@ export function useTodoList(params?: UseTodoListParams): UseTodoListResult {
     [refetch]
   );
 
-  return { ...state, refetch, createTodo, deleteTodo };
+  /**
+   * PATCH로 isCompleted만 바꾼다(AD-3). 성공 시 응답을 해당 항목에 즉시 반영해
+   * 체크박스가 바로 움직이게 한 뒤 refetch()로 서버와 재동기화한다(in-flight 목록
+   * 응답과의 경쟁을 refetchToken이 무효화한다 — createTodo/deleteTodo와 동일 전략).
+   */
+  const toggleTodo = useCallback(
+    async (id: number, isCompleted: boolean): Promise<boolean> => {
+      try {
+        const updated = await updateTodoRequest(id, { isCompleted });
+        setState((curr) => ({
+          ...curr,
+          items: curr.items.map((item) => (item.id === id ? toSummary(updated) : item)),
+          error: null,
+        }));
+        refetch();
+        return true;
+      } catch (caught) {
+        const apiError = toApiError(caught);
+        setState((curr) => ({ ...curr, error: apiError }));
+        return false;
+      }
+    },
+    [refetch]
+  );
+
+  return { ...state, refetch, createTodo, deleteTodo, toggleTodo };
 }

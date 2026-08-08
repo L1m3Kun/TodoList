@@ -247,4 +247,85 @@ describe('useTodoList', () => {
     expect(created).toEqual(createdSummary);
     expect(result.current.error).toBeNull();
   });
+
+  it('toggleTodo 성공 시 해당 항목의 isCompleted가 즉시 바뀌고 refetch로 GET이 한 번 더 나간다 (AD-3)', async () => {
+    let listCallCount = 0;
+    server.use(
+      http.get(`${TEST_API_BASE_URL}/items`, () => {
+        listCallCount += 1;
+        // 두 번째 이후 호출(=refetch)부터는 서버가 토글 결과를 반영한 목록을 돌려준다
+        return HttpResponse.json([{ ...mockTodoSummary, isCompleted: listCallCount > 1 }]);
+      }),
+      http.patch(`${TEST_API_BASE_URL}/items/:itemId`, () =>
+        HttpResponse.json({ ...mockTodoDetail, isCompleted: true }),
+      ),
+    );
+
+    const { result } = renderHook(() => useTodoList());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(listCallCount).toBe(1);
+
+    let toggled: boolean | null = null;
+    await act(async () => {
+      toggled = await result.current.toggleTodo(mockTodoSummary.id, true);
+    });
+
+    expect(toggled).toBe(true);
+    expect(result.current.error).toBeNull();
+    // refetch()가 실제로 새 GET 요청을 발생시켰는지(로컬 반영으로 끝나지 않았는지) 확인
+    await waitFor(() => expect(listCallCount).toBe(2));
+    // PATCH 직후 즉시 반영된 값이 refetch로 재동기화된 뒤에도 유지된다
+    await waitFor(() =>
+      expect(result.current.items).toEqual([{ ...mockTodoSummary, isCompleted: true }]),
+    );
+  });
+
+  it('toggleTodo 실패(500) 시 false를 반환하고 error에 HttpError가 반영된다', async () => {
+    const list = countListCalls(() => [mockTodoSummary]);
+    server.use(
+      errorHandler('patch', `${TEST_API_BASE_URL}/items/:itemId`, 500, errorBody('Internal error')),
+    );
+
+    const { result } = renderHook(() => useTodoList());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let toggled: boolean | null = null;
+    await act(async () => {
+      toggled = await result.current.toggleTodo(mockTodoSummary.id, true);
+    });
+
+    expect(toggled).toBe(false);
+    expect(result.current.error).toBeInstanceOf(HttpError);
+    expect((result.current.error as HttpError).status).toBe(500);
+    // 실패한 토글은 refetch를 트리거하지 않는다 — 항목은 원래 상태 그대로다
+    expect(list.count()).toBe(1);
+    expect(result.current.items).toEqual([mockTodoSummary]);
+  });
+
+  it('StrictMode(mount→unmount→remount)에서도 toggleTodo가 성공 결과를 반환한다 (D-66 회귀, S-10)', async () => {
+    let listCallCount = 0;
+    server.use(
+      http.get(`${TEST_API_BASE_URL}/items`, () => {
+        listCallCount += 1;
+        return HttpResponse.json([{ ...mockTodoSummary, isCompleted: listCallCount > 1 }]);
+      }),
+      http.patch(`${TEST_API_BASE_URL}/items/:itemId`, () =>
+        HttpResponse.json({ ...mockTodoDetail, isCompleted: true }),
+      ),
+    );
+
+    const { result } = renderHook(() => useTodoList(), { wrapper: StrictMode });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let toggled: boolean | null = null;
+    await act(async () => {
+      toggled = await result.current.toggleTodo(mockTodoSummary.id, true);
+    });
+
+    expect(toggled).toBe(true);
+    expect(result.current.error).toBeNull();
+    await waitFor(() =>
+      expect(result.current.items).toEqual([{ ...mockTodoSummary, isCompleted: true }]),
+    );
+  });
 });
