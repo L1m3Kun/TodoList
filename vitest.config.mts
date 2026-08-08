@@ -7,15 +7,16 @@ export default defineConfig({
   plugins: [tsconfigPaths(), react()],
   test: {
     env: {
-      API_BASE_URL: 'http://example.com',
+      NEXT_PUBLIC_API_BASE_URL: 'http://example.com/api/test-tenant',
     },
     environment: 'jsdom',
     passWithNoTests: true,
     include: ['test/**/*.{test,spec}.{ts,tsx}'],
+    setupFiles: ['./test/setup.ts'],
     coverage: {
       provider: 'v8',
       enabled: true,
-      include: ['src/**/*.{ts,tsx}'],
+      include: ['lib/**/*.{ts,tsx}', 'hooks/**/*.{ts,tsx}'],
       exclude: [
         '**/index.ts',
         'configs/**',
