@@ -6,7 +6,7 @@ import {
   ApiError,
   NetworkError,
 } from '@/lib/api';
-import type { DeleteResult, TodoDetail, UpdateTodoInput } from '@/types/todo';
+import type { DeleteResult, TodoDetailDto, UpdateTodoInput } from '@/types/todo.dto';
 
 /**
  * Todo 상세 데이터 접근 훅. mount 시(및 id 변경 시) `getTodo`를 effect로 호출한다.
@@ -17,7 +17,7 @@ import type { DeleteResult, TodoDetail, UpdateTodoInput } from '@/types/todo';
  */
 
 interface UseTodoDetailState {
-  detail: TodoDetail | null;
+  detail: TodoDetailDto | null;
   isLoading: boolean;
   error: ApiError | null;
 }

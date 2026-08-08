@@ -11,13 +11,13 @@ import {
   uploadImageResultSchema,
 } from '@/types/schemas/todo.schema';
 import type {
-  TodoSummary,
-  TodoDetail,
+  TodoSummaryDto,
+  TodoDetailDto,
   CreateTodoInput,
   UpdateTodoInput,
   DeleteResult,
   UploadImageResult,
-} from '@/types/todo';
+} from '@/types/todo.dto';
 
 /**
  * Todo API 엔드포인트 함수 6종. 전부 `lib/api/client.ts`의 `request<T>()`에 위임한다
@@ -62,13 +62,13 @@ function buildTodosQueryString(params?: {
 export async function getTodos(params?: {
   page?: number;
   pageSize?: number;
-}): Promise<TodoSummary[]> {
+}): Promise<TodoSummaryDto[]> {
   const qs = buildTodosQueryString(params);
   return request(`/items${qs}`, { method: 'GET' }, todoSummaryListSchema);
 }
 
 /** POST /items */
-export async function createTodo(input: CreateTodoInput): Promise<TodoDetail> {
+export async function createTodo(input: CreateTodoInput): Promise<TodoDetailDto> {
   const body = parseOrThrow(createTodoInputSchema, input);
   return request(
     '/items',
@@ -78,7 +78,7 @@ export async function createTodo(input: CreateTodoInput): Promise<TodoDetail> {
 }
 
 /** GET /items/:id */
-export async function getTodo(id: number): Promise<TodoDetail> {
+export async function getTodo(id: number): Promise<TodoDetailDto> {
   return request(`/items/${id}`, { method: 'GET' }, todoDetailSchema);
 }
 
@@ -86,7 +86,7 @@ export async function getTodo(id: number): Promise<TodoDetail> {
 export async function updateTodo(
   id: number,
   patch: UpdateTodoInput
-): Promise<TodoDetail> {
+): Promise<TodoDetailDto> {
   const body = parseOrThrow(updateTodoInputSchema, patch);
   return request(
     `/items/${id}`,

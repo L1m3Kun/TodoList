@@ -5,7 +5,7 @@ import { TEST_API_BASE_URL, mockDeleteResult, mockTodoDetail } from '@/test/mock
 import { server } from '@/test/mocks/server';
 
 describe('createTodo', () => {
-  it('정상 경로 — 생성된 TodoDetail을 반환한다', async () => {
+  it('정상 경로 — 생성된 TodoDetailDto을 반환한다', async () => {
     const result = await createTodo({ name: 'New todo' });
     expect(result).toEqual(mockTodoDetail);
   });
@@ -26,7 +26,7 @@ describe('createTodo', () => {
 });
 
 describe('updateTodo', () => {
-  it('정상 경로 — 수정된 TodoDetail을 반환한다', async () => {
+  it('정상 경로 — 수정된 TodoDetailDto을 반환한다', async () => {
     const result = await updateTodo(1, { isCompleted: true });
     expect(result).toEqual(mockTodoDetail);
   });

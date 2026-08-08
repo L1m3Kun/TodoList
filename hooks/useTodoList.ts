@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createTodo as createTodoRequest, deleteTodo as deleteTodoRequest, getTodos } from '@/lib/api/todoApi';
 import { ApiError, NetworkError } from '@/lib/api/errors';
-import type { CreateTodoInput, TodoSummary } from '@/types/todo';
+import type { CreateTodoInput, TodoSummaryDto } from '@/types/todo.dto';
 
 /**
  * Todo 목록 데이터 접근 훅. mount 시(및 page/pageSize 변경 시) `getTodos`를 effect로
@@ -18,7 +18,7 @@ export interface UseTodoListParams {
 }
 
 interface UseTodoListState {
-  items: TodoSummary[];
+  items: TodoSummaryDto[];
   isLoading: boolean;
   error: ApiError | null;
 }
@@ -38,7 +38,7 @@ function toApiError(error: unknown): ApiError {
   return error instanceof ApiError ? error : new NetworkError(error);
 }
 
-function toSummary(detail: { id: number; name: string; isCompleted: boolean }): TodoSummary {
+function toSummary(detail: { id: number; name: string; isCompleted: boolean }): TodoSummaryDto {
   return { id: detail.id, name: detail.name, isCompleted: detail.isCompleted };
 }
 

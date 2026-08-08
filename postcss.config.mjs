@@ -7,7 +7,7 @@ const config = {
   theme: {
     extends: {
       fontFamily: {
-        nanumSquare: 'var(--font-nanumSqure)',
+        nanumSquare: ['var(--font-nanum-squre)'],
       },
     },
   },

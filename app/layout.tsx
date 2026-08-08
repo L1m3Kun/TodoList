@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { nanumSquare } from '@/assets/fonts';
 import './globals.css';
+import { GlobalNavBar } from '@/components/gnb';
 
 export const metadata: Metadata = {
   title: 'Codeit TodoList',
@@ -10,7 +11,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="ko" className={`${nanumSquare.className} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex flex-col min-h-full">
+        <GlobalNavBar />
+        {children}
+      </body>
     </html>
   );
 }

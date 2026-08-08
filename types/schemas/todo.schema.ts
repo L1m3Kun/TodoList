@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import type {
-  TodoSummary,
-  TodoDetail,
+  TodoSummaryDto,
+  TodoDetailDto,
   CreateTodoInput,
   UpdateTodoInput,
   DeleteResult,
   UploadImageResult,
-} from '@/types/todo';
+} from '@/types/todo.dto';
 
 /**
  * Todo 도메인 타입에 대응하는 zod 런타임 스키마.
@@ -63,10 +63,10 @@ type AssertEqual<A, B> = A extends B ? (B extends A ? true : false) : false;
 type AssertTrue<T extends true> = T;
 
 export type TodoSummarySchemaMatchesType = AssertTrue<
-  AssertEqual<z.infer<typeof todoSummarySchema>, TodoSummary>
+  AssertEqual<z.infer<typeof todoSummarySchema>, TodoSummaryDto>
 >;
 export type TodoDetailSchemaMatchesType = AssertTrue<
-  AssertEqual<z.infer<typeof todoDetailSchema>, TodoDetail>
+  AssertEqual<z.infer<typeof todoDetailSchema>, TodoDetailDto>
 >;
 export type CreateTodoInputSchemaMatchesType = AssertTrue<
   AssertEqual<z.infer<typeof createTodoInputSchema>, CreateTodoInput>
