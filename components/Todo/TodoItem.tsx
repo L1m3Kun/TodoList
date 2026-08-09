@@ -4,8 +4,8 @@ import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
 import { Todo } from '@/types';
-import CheckBox from '@assets/icon/checkbox/Property 1=Default.svg';
-import CheckedBox from '@assets/icon/checkbox/Property 1=Frame 2610233.svg';
+import CheckBox from '@assets/icon/checkbox/Property1=Default.svg';
+import CheckedBox from '@assets/icon/checkbox/Property1=Frame 2610233.svg';
 
 interface TodoItemProps {
   todo: Todo;

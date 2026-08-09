@@ -3,7 +3,7 @@ import {
   ButtonProps as HBButtonProps,
 } from '@headlessui/react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import PlusIcon from '@assets/icon/plus/Property 1=plus.svg';
+import PlusIcon from '@assets/icon/plus/Property1=plus.svg';
 import EditIcon from '@assets/icon/edit/edit.svg';
 import { cn } from '@lib/utils';
 

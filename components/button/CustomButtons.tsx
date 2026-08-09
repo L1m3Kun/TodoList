@@ -4,7 +4,7 @@ import {
 } from '@headlessui/react';
 import { cva, type VariantProps } from 'class-variance-authority';
 
-import PlusIcon from '@assets/icon/plus/Property 1=plus.svg';
+import PlusIcon from '@assets/icon/plus/Property1=plus.svg';
 import XIcon from '@assets/icon/x/X.svg';
 import CheckIcon from '@assets/icon/check/check.svg';
 import { cn } from '@lib/utils';
