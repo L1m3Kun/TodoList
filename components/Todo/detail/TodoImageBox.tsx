@@ -4,7 +4,7 @@ import { ChangeEvent, useId, useRef } from 'react';
 import Image from 'next/image';
 
 import ImageIcon from '@assets/icon/image/img.svg';
-import { IconButton } from '@/components/button';
+import { IconButton } from '@components/button';
 import { cn } from '@/lib/utils';
 
 interface TodoImageBoxProps {
@@ -77,7 +77,7 @@ function TodoImageBox({
       {isUploading ? (
         <div
           role="status"
-          className="absolute inset-0 flex items-center justify-center rounded-3xl bg-slate-900/50 text-sm font-medium text-white"
+          className="absolute inset-0 z-20 flex items-center justify-center text-sm font-medium text-white rounded-3xl bg-slate-900/50"
         >
           업로드 중
         </div>
