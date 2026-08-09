@@ -15,7 +15,16 @@ function DoneEmptyCompo() {
             width={240}
             height={240}
           />
-          <Image src={EmptyDoneSmall} alt="empty" width={120} height={120} />
+          {/* W-4 — TodoSection이 페이지 최초 진입 시 항상 나란히 렌더되므로
+              done 리스트가 비어 있으면 이 이미지가 above-the-fold LCP
+              후보로 잡힌다(E2E 실측). eager 로딩 대상으로 표시한다. */}
+          <Image
+            src={EmptyDoneSmall}
+            alt="empty"
+            width={120}
+            height={120}
+            priority
+          />
         </picture>
       </div>
 
