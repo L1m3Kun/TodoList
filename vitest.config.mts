@@ -1,6 +1,5 @@
 import { defineConfig, type Plugin } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import svgr from 'vite-plugin-svgr';
 import fs from 'fs';
 import path from 'path';
@@ -53,7 +52,6 @@ function nextStaticImageData(): Plugin {
 
 export default defineConfig({
   plugins: [
-    tsconfigPaths(),
     react(),
     nextStaticImageData(),
     // vite-plugin-svgr@5.x: 기본 include는 `**/*.svg?react`라 쿼리 없는
@@ -98,14 +96,15 @@ export default defineConfig({
     },
   },
   resolve: {
+    tsconfigPaths: true,
     alias: {
-      '@': path.resolve(__dirname, './'),
-      '@assets': path.resolve(__dirname, './assets'),
-      '@pages': path.resolve(__dirname, './pages'),
-      '@components': path.resolve(__dirname, './components'),
-      '@hooks': path.resolve(__dirname, './hooks'),
-      '@lib': path.resolve(__dirname, './lib'),
-      '@types': path.resolve(__dirname, './types'),
+      '@': path.resolve(import.meta.dirname, './'),
+      '@assets': path.resolve(import.meta.dirname, './assets'),
+      '@pages': path.resolve(import.meta.dirname, './pages'),
+      '@components': path.resolve(import.meta.dirname, './components'),
+      '@hooks': path.resolve(import.meta.dirname, './hooks'),
+      '@lib': path.resolve(import.meta.dirname, './lib'),
+      '@types': path.resolve(import.meta.dirname, './types'),
     },
   },
 });
